@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import "./globals.css";
-import { Users, LayoutDashboard, Rocket, LogOut } from 'lucide-react';
+import { Users, LayoutDashboard, Rocket, LogOut, Building2, CheckSquare  } from 'lucide-react';
 import { Briefcase } from 'lucide-react';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Contacts', href: '/', icon: Users },
     { name: 'Entreprises', href: '/companies', icon: Briefcase },
     { name: 'Pipeline', href: '/pipeline', icon: Rocket },
+    { name: 'Tâches', href: '/tasks', icon: CheckSquare },
   ];
 
   // 1. Cas : Page de Login (Pas de sidebar)
