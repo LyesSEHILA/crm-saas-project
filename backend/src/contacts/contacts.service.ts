@@ -1,14 +1,14 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
-import { MailService } from '../mail/mail.service'; // <-- Importe le MailService
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class ContactsService {
   private supabase: SupabaseClient;
+  private readonly logger = new Logger(ContactsService.name);
 
-  // <-- Injecte le MailService dans le constructeur
   constructor(private readonly mailService: MailService) { 
     this.supabase = createClient(
       process.env.SUPABASE_URL || '',
@@ -16,43 +16,52 @@ export class ContactsService {
     );
   }
 
-  // C : CREATE (Créer un contact)
   async create(createContactDto: CreateContactDto) {
-    const { data, error } = await this.supabase
-      .from('contacts')
-      .insert([createContactDto])
-      .select();
+  const { data, error } = await this.supabase
+    .from('contacts')
+    .insert([createContactDto])
+    .select();
 
-    if (error) throw new InternalServerErrorException(error.message);
+  if (error) throw new InternalServerErrorException(error.message);
 
-    // 🔥 LA MAGIE OPÈRE ICI : Envoi de l'email en tâche de fond
-    if (data && data.length > 0) {
-      const newContact = data[0];
-      // On déclenche l'email sans faire attendre la réponse HTTP
-      this.mailService.sendWelcomeEmail(
-        newContact.email, 
-        `${newContact.first_name} ${newContact.last_name}`
-      );
-    }
-
-    return data;
+  if (data && data.length > 0) {
+    const newContact = data[0];
+    this.mailService.sendWelcomeEmail(
+      newContact.email, 
+      `${newContact.first_name} ${newContact.last_name}`
+    ).catch(err => console.error("Email non envoyé :", err));
   }
 
-  // R : READ ALL (Lire tous les contacts)
+  return data;
+}
+
   async findAll() {
-    const { data, error } = await this.supabase
-      .from('contacts')
-      .select('*');
+    try {
+      const { data, error } = await this.supabase
+        .from('contacts')
+        .select(`
+          *,
+          companies (
+            name
+          )
+        `);
 
-    if (error) throw new InternalServerErrorException(error.message);
-    return data;
+      if (error) {
+        this.logger.error("Erreur Supabase findAll:", error.message);
+        throw new InternalServerErrorException(error.message);
+      }
+
+      return data || []; // Toujours renvoyer un tableau
+    } catch (err) {
+      this.logger.error("Exception dans findAll:", err);
+      return []; // Sécurité pour le frontend
+    }
   }
 
-  // R : READ ONE (Lire un seul contact)
   async findOne(id: string) {
     const { data, error } = await this.supabase
       .from('contacts')
-      .select('*')
+      .select('*, companies(name)')
       .eq('id', id)
       .single();
 
@@ -60,7 +69,6 @@ export class ContactsService {
     return data;
   }
 
-  // U : UPDATE (Mettre à jour un contact)
   async update(id: string, updateContactDto: UpdateContactDto) {
     const { data, error } = await this.supabase
       .from('contacts')
@@ -72,9 +80,8 @@ export class ContactsService {
     return data;
   }
 
-  // D : DELETE (Supprimer un contact)
   async remove(id: string) {
-    const { data, error } = await this.supabase
+    const { error } = await this.supabase
       .from('contacts')
       .delete()
       .eq('id', id);
