@@ -1,164 +1,191 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, X, User, Euro, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const COLUMNS = ['nouveau', 'en cours', 'converti', 'perdu'];
 
 export default function PipelinePage() {
   const [leads, setLeads] = useState<any[]>([]);
-  const [contacts, setContacts] = useState<any[]>([]); // Pour la liste déroulante
+  const [contacts, setContacts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ title: '', amount: '', status: 'nouveau', contact_id: '' });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+  useEffect(() => { fetchLeads(); fetchContacts(); }, []);
+
+  const fetchLeads = async () => { 
+    const res = await fetch(`${API_URL}/leads`);
+    setLeads(await res.json()); 
+  };
   
-  const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    status: 'nouveau',
-    contact_id: ''
-  });
+  const fetchContacts = async () => { 
+    const res = await fetch(`${API_URL}/contacts`);
+    setContacts(await res.json()); 
+  };
 
-  // Chargement des données au démarrage
-  useEffect(() => {
-    fetchLeads();
-    fetchContacts();
-  }, []);
+  // --- LOGIQUE DE DRAG & DROP ---
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
 
-  const fetchLeads = async () => {
+    // Si on lâche en dehors d'une colonne ou au même endroit, on ne fait rien
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
+      return;
+    }
+
+    const newStatus = destination.droppableId;
+    
+    // 1. Mise à jour visuelle immédiate (Optimistic UI)
+    const updatedLeads = leads.map(lead => 
+      lead.id === draggableId ? { ...lead, status: newStatus } : lead
+    );
+    setLeads(updatedLeads);
+
+    // 2. Mise à jour en base de données via le Backend
     try {
-      const res = await fetch('http://localhost:3000/leads');
-      if (res.ok) setLeads(await res.json());
+      await fetch(`${API_URL}/leads/${draggableId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
     } catch (error) {
-      console.error("Erreur Leads", error);
+      console.error("Erreur lors de la mise à jour du statut", error);
+      fetchLeads(); // En cas d'erreur, on recharge les vraies données
     }
   };
 
-  const fetchContacts = async () => {
-    try {
-      const res = await fetch('http://localhost:3000/contacts');
-      if (res.ok) setContacts(await res.json());
-    } catch (error) {
-      console.error("Erreur Contacts", error);
-    }
-  };
-
-  // Soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      // On convertit le montant en nombre si nécessaire
-      const payload = {
-        ...formData,
-        amount: formData.amount ? parseFloat(formData.amount) : null
-      };
-
-      const res = await fetch('http://localhost:3000/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        setFormData({ title: '', amount: '', status: 'nouveau', contact_id: '' });
-        fetchLeads(); // On rafraîchit le Kanban
-      }
-    } catch (error) {
-      console.error("Erreur de création", error);
-    }
+    await fetch(`${API_URL}/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
+    });
+    setIsModalOpen(false);
+    setFormData({ title: '', amount: '', status: 'nouveau', contact_id: '' });
+    fetchLeads();
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
-        
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Pipeline Commercial</h1>
-            <p className="text-slate-500 mt-1">Suivez vos opportunités et convertissez vos prospects.</p>
-          </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm transition"
-          >
-            + Nouvelle Opportunité
-          </button>
-        </header>
+    <div className="min-h-screen bg-slate-50 p-8">
+      <header className="flex justify-between items-center mb-10 max-w-7xl mx-auto">
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">PIPELINE <span className="text-blue-600">SALES</span></h1>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white font-black py-3 px-6 rounded-2xl shadow-lg shadow-blue-200 flex items-center gap-2 hover:bg-blue-700 transition-all uppercase text-sm tracking-widest"
+        >
+          <Plus size={20} /> Nouvelle Opportunité
+        </button>
+      </header>
 
-        {/* Le Board Kanban */}
-        <div className="flex gap-6 overflow-x-auto pb-4">
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="flex gap-6 overflow-x-auto pb-10 px-4 min-h-[80vh]">
           {COLUMNS.map((status) => (
-            <div key={status} className="bg-slate-200/50 rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-[70vh]">
-              <div className="flex justify-between items-center mb-4 px-2">
-                <h2 className="font-bold text-slate-700 uppercase text-sm tracking-wider">{status}</h2>
-                <span className="bg-slate-300 text-slate-700 text-xs font-bold px-2 py-1 rounded-full">
-                  {leads.filter(lead => lead.status === status).length}
+            <div key={status} className="w-80 flex-shrink-0 flex flex-col group">
+              <div className="flex justify-between items-center mb-4 px-4">
+                <h2 className="font-black text-slate-400 uppercase text-[11px] tracking-[0.2em]">{status}</h2>
+                <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2.5 py-1 rounded-lg">
+                  {leads.filter(l => l.status === status).length}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                {leads.filter(lead => lead.status === status).map((lead) => (
-                  <div key={lead.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition cursor-pointer group">
-                    <h3 className="font-bold text-slate-800 mb-1">{lead.title}</h3>
-                    <div className="text-sm text-slate-500 mb-3">
-                      👤 {lead.contacts?.first_name} {lead.contacts?.last_name}
-                    </div>
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
-                      <span className="font-bold text-blue-600">{lead.amount ? `${lead.amount} €` : '-'}</span>
+              <Droppable droppableId={status}>
+                {(provided, snapshot) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className={`flex-1 rounded-3xl p-3 transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-blue-50/50 border-2 border-dashed border-blue-200' : 'bg-slate-100/50'}`}
+                  >
+                    <div className="space-y-3">
+                      {leads.filter(l => l.status === status).map((lead, index) => (
+                        <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-shadow ${snapshot.isDragging ? 'shadow-2xl border-blue-200 ring-2 ring-blue-500/10' : 'hover:shadow-md'}`}
+                            >
+                              <div className="flex justify-between items-start mb-3">
+                                <h3 className="font-bold text-slate-900 leading-tight pr-4">{lead.title}</h3>
+                                <GripVertical size={16} className="text-slate-300 flex-shrink-0" />
+                              </div>
+                              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-4">
+                                <User size={12} className="text-blue-500" /> 
+                                {lead.contacts?.first_name} {lead.contacts?.last_name}
+                              </div>
+                              <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                                <span className="text-sm font-black text-slate-900">{lead.amount?.toLocaleString()} €</span>
+                                <div className="h-1.5 w-8 rounded-full bg-slate-100 overflow-hidden">
+                                    <div className="h-full bg-blue-500 w-1/3"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </Droppable>
             </div>
           ))}
         </div>
+      </DragDropContext>
 
-      </div>
-
-      {/* MODALE DU FORMULAIRE */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-800">Ajouter un Lead</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Titre de l'opportunité *</label>
-                <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Ex: Refonte site web" className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Montant estimé (€)</label>
-                  <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Statut initial</label>
-                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white">
-                    {COLUMNS.map(col => <option key={col} value={col}>{col}</option>)}
-                  </select>
-                </div>
+      {/* MODALE DE CRÉATION (Correction couleurs texte) */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 overflow-hidden border border-white/20">
+              <div className="p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic">NOUVELLE <span className="text-blue-600">AFFAIRE</span></h2>
+                <button onClick={() => setIsModalOpen(false)} className="bg-white p-2 rounded-full shadow-sm text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Contact associé *</label>
-                <select required value={formData.contact_id} onChange={(e) => setFormData({...formData, contact_id: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 bg-white">
-                  <option value="" disabled>Sélectionner un contact</option>
-                  {contacts.map(c => (
-                    <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
-                  ))}
-                </select>
-              </div>
+              <form onSubmit={handleSubmit} className="p-10 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Titre de l'opportunité</label>
+                  <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Ex: Contrat Maintenance 2024" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold placeholder:text-slate-300 focus:border-blue-500 focus:bg-white outline-none transition-all" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Valeur estimée</label>
+                    <div className="relative">
+                        <input type="number" required value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 focus:bg-white outline-none transition-all" />
+                        <Euro size={16} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Phase</label>
+                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+                      {COLUMNS.map(col => <option key={col} value={col}>{col.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition">Annuler</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition shadow-sm">Créer l'opportunité</button>
-              </div>
-            </form>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Décideur</label>
+                  <select required value={formData.contact_id} onChange={(e) => setFormData({...formData, contact_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+                    <option value="">Choisir un contact...</option>
+                    {contacts.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
+                  </select>
+                </div>
+
+                <button type="submit" className="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-[0.2em] text-xs mt-4">
+                  Enregistrer l'opportunité
+                </button>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

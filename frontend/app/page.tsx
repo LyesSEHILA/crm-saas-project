@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { UserPlus, Mail, Phone, User, X, Trash2 } from 'lucide-react';
 
-export default function Home() {
+export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -12,136 +14,139 @@ export default function Home() {
     phone: ''
   });
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+  useEffect(() => { fetchContacts(); }, []);
 
   const fetchContacts = async () => {
     try {
-      const res = await fetch('http://localhost:3000/contacts');
-      const data = await res.json();
-      setContacts(data);
-    } catch (error) {
-      console.error("Erreur de connexion", error);
-    }
+      const res = await fetch(`${API_URL}/contacts`);
+      setContacts(await res.json());
+    } catch (error) { console.error(error); }
   };
 
-  // --- NOUVELLE FONCTION : SUPPRIMER UN CONTACT ---
   const handleDelete = async (id: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce contact ?")) return;
-
-    try {
-      const res = await fetch(`http://localhost:3000/contacts/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        // On rafraîchit la liste après suppression
-        fetchContacts();
-      } else {
-        alert("Erreur lors de la suppression");
-      }
-    } catch (error) {
-      console.error("Erreur réseau", error);
-    }
+    if (!confirm("Supprimer ce contact ?")) return;
+    await fetch(`${API_URL}/contacts/${id}`, { method: 'DELETE' });
+    fetchContacts();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await fetch('http://localhost:3000/contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (res.ok) {
-        setIsModalOpen(false);
-        setFormData({ first_name: '', last_name: '', email: '', phone: '' });
-        fetchContacts();
-      } else {
-        const err = await res.json();
-        alert("Erreur : " + err.message);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la création", error);
+    const res = await fetch(`${API_URL}/contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    if (res.ok) {
+      setIsModalOpen(false);
+      setFormData({ first_name: '', last_name: '', email: '', phone: '' });
+      fetchContacts();
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-8">
+        <header className="flex justify-between items-end mb-10">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mes Contacts</h1>
-            <p className="text-slate-500 mt-1">Gérez vos relations clients et vos leads.</p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Répertoire</h1>
+            <p className="text-slate-500 font-medium">Gérez vos clients et partenaires.</p>
           </div>
-          <button 
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg shadow-sm transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-2xl shadow-lg shadow-blue-200 flex items-center gap-2 transition-all"
           >
-            + Nouveau Contact
-          </button>
+            <UserPlus size={20} />
+            Nouveau Contact
+          </motion.button>
         </header>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          {contacts.length === 0 ? (
-            <div className="p-16 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">Aucun contact</h3>
-            </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
-                  <th className="p-5 font-semibold">Nom complet</th>
-                  <th className="p-5 font-semibold">Email</th>
-                  <th className="p-5 font-semibold">Téléphone</th>
-                  <th className="p-5 font-semibold text-right">Actions</th>
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] text-slate-400 uppercase tracking-widest font-black">
+                <th className="p-6">Contact</th>
+                <th className="p-6">Coordonnées</th>
+                <th className="p-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {contacts.map((c) => (
+                <tr key={c.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <td className="p-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold">
+                        {c.first_name[0]}{c.last_name[0]}
+                      </div>
+                      <span className="font-bold text-slate-800">{c.first_name} {c.last_name}</span>
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    <div className="text-sm text-slate-600 font-medium">{c.email}</div>
+                    <div className="text-xs text-slate-400">{c.phone || '—'}</div>
+                  </td>
+                  <td className="p-6 text-right">
+                    <button onClick={() => handleDelete(c.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {contacts.map((contact) => (
-                  <tr key={contact.id} className="hover:bg-slate-50 group">
-                    <td className="p-5 font-medium">{contact.first_name} {contact.last_name}</td>
-                    <td className="p-5 text-slate-600">{contact.email}</td>
-                    <td className="p-5 text-slate-600">{contact.phone || '—'}</td>
-                    <td className="p-5 text-right">
-                      {/* BOUTON SUPPRIMER */}
-                      <button 
-                        onClick={() => handleDelete(contact.id)}
-                        className="text-red-500 hover:text-red-700 font-medium text-sm transition-colors"
-                      >
-                        Supprimer
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* MODALE (identique à précédemment) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">Ajouter un contact</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" required placeholder="Prénom" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="border p-2 rounded w-full" />
-                <input type="text" required placeholder="Nom" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="border p-2 rounded w-full" />
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative z-10"
+            >
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <h2 className="text-2xl font-black text-slate-900 italic">CRÉER UN <span className="text-blue-600">CONTACT</span></h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X /></button>
               </div>
-              <input type="email" required placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="border p-2 rounded w-full" />
-              <input type="tel" placeholder="Téléphone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="border p-2 rounded w-full" />
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-500">Annuler</button>
-                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Enregistrer</button>
-              </div>
-            </form>
+              
+              <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Prénom</label>
+                    <input type="text" required value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Nom</label>
+                    <input type="text" required value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-400 uppercase ml-1">Email</label>
+                  <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-400 uppercase ml-1">Téléphone</label>
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition" />
+                </div>
+                
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-200 mt-4 transition-all uppercase tracking-widest">
+                  Ajouter au répertoire
+                </button>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
