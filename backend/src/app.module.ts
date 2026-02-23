@@ -6,11 +6,12 @@ import { ContactsModule } from './contacts/contacts.module';
 import { LeadsModule } from './leads/leads.module';
 import { MailService } from './mail/mail.service';
 import { StatsModule } from './stats/stats.module';
+import { CompaniesModule } from './companies/companies.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), 
-    ContactsModule, LeadsModule, StatsModule
+    ContactsModule, LeadsModule, StatsModule, CompaniesModule
   ],
   controllers: [AppController],
   providers: [AppService, MailService],

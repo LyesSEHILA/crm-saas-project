@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import "./globals.css";
 import { Users, LayoutDashboard, Rocket, LogOut } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Contacts', href: '/', icon: Users },
+    { name: 'Entreprises', href: '/companies', icon: Briefcase },
     { name: 'Pipeline', href: '/pipeline', icon: Rocket },
   ];
 
