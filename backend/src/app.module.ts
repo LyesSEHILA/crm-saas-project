@@ -9,11 +9,12 @@ import { StatsModule } from './stats/stats.module';
 import { CompaniesModule } from './companies/companies.module';
 import { TasksModule } from './tasks/tasks.module';
 import { LeadNotesModule } from './lead-notes/lead-notes.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), 
-    ContactsModule, LeadsModule, StatsModule, CompaniesModule, TasksModule, LeadNotesModule
+    ContactsModule, LeadsModule, StatsModule, CompaniesModule, TasksModule, LeadNotesModule, SearchModule
   ],
   controllers: [AppController],
   providers: [AppService, MailService],
