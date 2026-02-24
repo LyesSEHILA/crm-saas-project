@@ -14,7 +14,6 @@ export class LeadsService {
     );
   }
 
-  // CREATE : Ajouter un nouveau prospect
   async create(createLeadDto: CreateLeadDto) {
     const { data, error } = await this.supabase
       .from('leads')
@@ -25,7 +24,6 @@ export class LeadsService {
     return data;
   }
 
-  // READ ALL : Récupérer tous les leads (avec le nom du contact)
   async findAll() {
     const { data, error } = await this.supabase
       .from('leads')
@@ -35,7 +33,6 @@ export class LeadsService {
     return data;
   }
 
-  // READ ONE
   async findOne(id: string) {
     const { data, error } = await this.supabase
       .from('leads')
@@ -47,7 +44,6 @@ export class LeadsService {
     return data;
   }
 
-  // UPDATE : Mettre à jour un lead (ex: changer son statut)
   async update(id: string, updateLeadDto: UpdateLeadDto) {
     const { data, error } = await this.supabase
       .from('leads')
@@ -59,14 +55,33 @@ export class LeadsService {
     return data;
   }
 
-  // DELETE
   async remove(id: string) {
-    const { data, error } = await this.supabase
+    const { error } = await this.supabase
       .from('leads')
       .delete()
       .eq('id', id);
 
     if (error) throw new InternalServerErrorException(error.message);
     return { message: 'Lead supprimé avec succès' };
+  }
+
+  async exportToCSV() {
+    const { data: leads, error } = await this.supabase
+      .from('leads')
+      .select('title, amount, status, created_at, contacts(first_name, last_name)');
+
+    if (error) throw new InternalServerErrorException(error.message);
+
+    const header = "Opportunité;Montant;Statut;Date;Contact\n";
+    
+    // Correction : On caste l.contacts en 'any' ou on accède à l'index [0] pour satisfaire TS
+    const rows = (leads || []).map(l => {
+      const contact = Array.isArray(l.contacts) ? l.contacts[0] : l.contacts;
+      const contactName = contact ? `${contact.first_name} ${contact.last_name}` : "N/A";
+      const date = new Date(l.created_at).toLocaleDateString();
+      return `${l.title};${l.amount};${l.status};${date};${contactName}`;
+    }).join("\n");
+
+    return header + rows;
   }
 }

@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, User, Euro, GripVertical, TrendingUp, Target, MessageSquare, Clock, Send, Trash2 } from 'lucide-react';
+import { 
+  Plus, X, User, Euro, GripVertical, TrendingUp, 
+  Target, MessageSquare, Clock, Send, Trash2, Download 
+} from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const COLUMNS = ['nouveau', 'en cours', 'converti', 'perdu'];
@@ -19,7 +22,10 @@ export default function PipelinePage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-  useEffect(() => { fetchLeads(); fetchContacts(); }, []);
+  useEffect(() => { 
+    fetchLeads(); 
+    fetchContacts(); 
+  }, []);
 
   const fetchLeads = async () => { 
     const res = await fetch(`${API_URL}/leads`);
@@ -37,6 +43,11 @@ export default function PipelinePage() {
     const res = await fetch(`${API_URL}/lead-notes/lead/${leadId}`);
     const data = await res.json();
     setNotes(Array.isArray(data) ? data : []);
+  };
+
+  // --- FONCTION D'EXPORTATION CSV ---
+  const handleExport = () => {
+    window.open(`${API_URL}/leads/export/csv`, '_blank');
   };
 
   const onDragEnd = async (result: DropResult) => {
@@ -89,7 +100,6 @@ export default function PipelinePage() {
     }
   };
 
-  // --- NOUVELLE FONCTION DE SUPPRESSION ---
   const handleDeleteNote = async (noteId: string) => {
     if (!confirm("Supprimer ce commentaire ?")) return;
     const res = await fetch(`${API_URL}/lead-notes/${noteId}`, { method: 'DELETE' });
@@ -112,12 +122,23 @@ export default function PipelinePage() {
         <h1 className="text-4xl font-black text-slate-900 tracking-tight italic uppercase">
           PIPELINE <span className="text-blue-600">SALES</span>
         </h1>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white font-black py-3 px-6 rounded-2xl shadow-lg shadow-blue-200 flex items-center gap-2 hover:bg-blue-700 transition-all uppercase text-sm tracking-widest"
-        >
-          <Plus size={20} /> Nouvelle Opportunité
-        </button>
+        
+        {/* BOUTONS D'ACTION */}
+        <div className="flex gap-4">
+          <button 
+            onClick={handleExport}
+            className="bg-white text-slate-900 font-black py-3 px-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2 hover:bg-slate-50 transition-all uppercase text-xs tracking-widest"
+          >
+            <Download size={18} className="text-blue-600" /> Exporter CSV
+          </button>
+          
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 text-white font-black py-3 px-6 rounded-2xl shadow-lg shadow-blue-200 flex items-center gap-2 hover:bg-blue-700 transition-all uppercase text-xs tracking-widest"
+          >
+            <Plus size={20} /> Nouvelle Opportunité
+          </button>
+        </div>
       </header>
 
       {/* BARRE DE PROGRESSION GLOBALE */}
@@ -126,7 +147,7 @@ export default function PipelinePage() {
           <div>
             <div className="flex items-center gap-2 text-slate-400 mb-1">
               <Target size={16} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Volume Total</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Volume Total du Pipeline</span>
             </div>
             <p className="text-4xl font-black text-slate-900 tracking-tighter">
               {totalPipelineValue.toLocaleString()} €
@@ -135,10 +156,10 @@ export default function PipelinePage() {
           <div className="text-right">
             <div className="flex items-center justify-end gap-2 text-emerald-500 mb-1">
               <TrendingUp size={16} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Conversion</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Taux de Succès</span>
             </div>
             <p className="text-2xl font-black text-slate-900 tracking-tighter">
-              {progressPercentage.toFixed(1)}%
+              {progressPercentage.toFixed(1)}% <span className="text-slate-300 text-sm font-bold uppercase italic ml-1">Gagné</span>
             </p>
           </div>
         </div>
@@ -187,17 +208,17 @@ export default function PipelinePage() {
                               className={`bg-white p-5 rounded-2xl border border-slate-100 shadow-sm transition-shadow cursor-pointer ${snapshot.isDragging ? 'shadow-2xl border-blue-200 ring-2 ring-blue-500/10' : 'hover:shadow-md'}`}
                             >
                               <div className="flex justify-between items-start mb-3">
-                                <h3 className="font-bold text-slate-900 leading-tight pr-4">{lead.title}</h3>
+                                <h3 className="font-bold text-slate-900 leading-tight pr-4 truncate">{lead.title}</h3>
                                 <GripVertical size={16} className="text-slate-300 flex-shrink-0" />
                               </div>
                               <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase mb-4">
                                 <User size={12} className="text-blue-500" /> 
-                                {lead.contacts?.first_name} {lead.contacts?.last_name}
+                                {lead.contacts?.first_name} {lead.contacts?.last_name || 'Inconnu'}
                               </div>
                               <div className="flex justify-between items-center pt-4 border-t border-slate-50">
                                 <span className="text-lg font-black text-slate-900">{lead.amount?.toLocaleString()} €</span>
                                 <div className="h-1.5 w-8 rounded-full bg-slate-100 overflow-hidden">
-                                    <div className="h-full bg-blue-500 w-1/3"></div>
+                                    <div className={`h-full bg-blue-500 ${lead.status === 'converti' ? 'w-full bg-emerald-500' : 'w-1/3'}`}></div>
                                 </div>
                               </div>
                             </div>
@@ -214,30 +235,35 @@ export default function PipelinePage() {
         </div>
       </DragDropContext>
 
-      {/* PANNEAU LATÉRAL AVEC SUPPRESSION DE NOTE */}
+      {/* PANNEAU LATÉRAL (SLIDE-OVER) */}
       <AnimatePresence>
         {selectedLead && (
           <div className="fixed inset-0 z-[60] flex justify-end">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedLead(null)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25 }} className="relative w-full max-w-md bg-white h-screen shadow-2xl p-8 flex flex-col">
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative w-full max-w-md bg-white h-screen shadow-2xl p-8 flex flex-col">
               <button onClick={() => setSelectedLead(null)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-all text-slate-400"><X size={20} /></button>
               
               <div className="mb-10">
-                <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600">{selectedLead.status}</span>
-                <h2 className="text-3xl font-black text-slate-900 mt-4 tracking-tighter italic uppercase">{selectedLead.title}</h2>
+                <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">{selectedLead.status}</span>
+                <h2 className="text-3xl font-black text-slate-900 mt-4 tracking-tighter italic uppercase leading-none">{selectedLead.title}</h2>
+                <div className="flex items-center gap-2 mt-4 text-blue-600 font-black text-2xl tracking-tight">
+                  <Euro size={20} /> {selectedLead.amount?.toLocaleString()} €
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-hide">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-4 mb-4 text-slate-400">
                     <MessageSquare size={16} />
-                    <h3 className="text-xs font-black uppercase tracking-widest">Historique</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest">Historique de suivi</h3>
                 </div>
 
-                {notes.map((note) => (
+                {notes.length === 0 ? (
+                  <div className="py-10 text-center text-slate-300 italic text-sm font-medium">Aucun commentaire pour le moment.</div>
+                ) : (
+                  notes.map((note) => (
                     <motion.div key={note.id} layout className="bg-slate-50 p-5 rounded-3xl border border-slate-100 relative group">
                       <p className="text-slate-700 font-bold text-sm leading-relaxed pr-8">{note.content}</p>
                       
-                      {/* BOUTON SUPPRIMER NOTE */}
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
                         className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
@@ -250,13 +276,21 @@ export default function PipelinePage() {
                         <p className="text-[9px] font-black uppercase tracking-tighter">{new Date(note.created_at).toLocaleString()}</p>
                       </div>
                     </motion.div>
-                ))}
+                  ))
+                )}
               </div>
 
               <form onSubmit={handleAddNote} className="mt-8 pt-8 border-t border-slate-100">
                 <div className="relative">
-                    <textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Ajouter une note..." className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-slate-900 font-bold placeholder:text-slate-300 focus:border-blue-500 focus:bg-white outline-none transition-all h-32 resize-none" />
-                    <button type="submit" className="absolute bottom-4 right-4 bg-slate-900 text-white p-3 rounded-2xl hover:bg-blue-600 transition-all"><Send size={18} /></button>
+                    <textarea 
+                      value={newNote} 
+                      onChange={(e) => setNewNote(e.target.value)} 
+                      placeholder="Ajouter une note de suivi..." 
+                      className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-slate-900 font-bold focus:border-blue-500 focus:bg-white outline-none transition-all h-32 resize-none" 
+                    />
+                    <button type="submit" className="absolute bottom-4 right-4 bg-slate-900 text-white p-3 rounded-2xl hover:bg-blue-600 transition-all">
+                      <Send size={18} />
+                    </button>
                 </div>
               </form>
             </motion.div>
@@ -269,21 +303,42 @@ export default function PipelinePage() {
         {isModalOpen && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 overflow-hidden border border-white/20 p-10">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase mb-8">NOUVELLE <span className="text-blue-600">AFFAIRE</span></h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Titre..." className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all" />
-                <div className="grid grid-cols-2 gap-4">
-                    <input type="number" required value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} placeholder="Montant" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all" />
-                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all">
-                        {COLUMNS.map(col => <option key={col} value={col}>{col.toUpperCase()}</option>)}
-                    </select>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg relative z-10 overflow-hidden border border-white/20">
+              <div className="p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">NOUVELLE <span className="text-blue-600">AFFAIRE</span></h2>
+                <button onClick={() => setIsModalOpen(false)} className="bg-white p-2 rounded-full shadow-sm text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="p-10 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Titre</label>
+                  <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="Ex: Projet Refonte Web" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all" />
                 </div>
-                <select required value={formData.contact_id} onChange={(e) => setFormData({...formData, contact_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all">
-                    <option value="">Contact...</option>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Montant (€)</label>
+                    <input type="number" required value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} placeholder="0.00" className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Statut Initial</label>
+                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all">
+                      {COLUMNS.map(col => <option key={col} value={col}>{col.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact associé</label>
+                  <select required value={formData.contact_id} onChange={(e) => setFormData({...formData, contact_id: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none transition-all">
+                    <option value="">Sélectionner un contact...</option>
                     {contacts.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
                   </select>
-                <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl uppercase tracking-[0.2em] text-xs mt-4">Enregistrer</button>
+                </div>
+                
+                <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl uppercase tracking-[0.2em] text-xs mt-4 hover:bg-blue-600 transition-all">
+                  Enregistrer l'opportunité
+                </button>
               </form>
             </motion.div>
           </div>
