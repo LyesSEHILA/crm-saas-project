@@ -10,11 +10,12 @@ import { CompaniesModule } from './companies/companies.module';
 import { TasksModule } from './tasks/tasks.module';
 import { LeadNotesModule } from './lead-notes/lead-notes.module';
 import { SearchModule } from './search/search.module';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), 
-    ContactsModule, LeadsModule, StatsModule, CompaniesModule, TasksModule, LeadNotesModule, SearchModule
+    ContactsModule, LeadsModule, StatsModule, CompaniesModule, TasksModule, LeadNotesModule, SearchModule, ActivitiesModule
   ],
   controllers: [AppController],
   providers: [AppService, MailService],

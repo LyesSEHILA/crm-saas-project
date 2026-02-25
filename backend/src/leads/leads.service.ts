@@ -29,16 +29,26 @@ export class LeadsService {
     return data;
   }
 
-  async update(id: string, updateLeadDto: UpdateLeadDto) {
-    const { data, error } = await this.supabase.from('leads').update(updateLeadDto).eq('id', id).select();
-    if (error) throw new InternalServerErrorException(error.message);
+async update(id: string, updateLeadDto: UpdateLeadDto) {
+  // 1. On met à jour le lead
+  const { data, error } = await this.supabase.from('leads').update(updateLeadDto).eq('id', id).select();
+  if (error) throw new InternalServerErrorException(error.message);
 
-    // Automation : Création de tâche si gagné
-    if (updateLeadDto?.status === 'converti' && data && data.length > 0) {
-      await this.createAutoTask(data[0]);
-    }
-    return data;
+  // 2. Si le statut passe à 'converti', on déclenche les automations
+  if (updateLeadDto?.status === 'converti' && data && data.length > 0) {
+    const lead = data[0];
+    
+    await this.createAutoTask(lead); // Ta fonction existante
+    await this.createAutoInvoice(lead); // La fonction de facturation ajoutée précédemment
+    
+    // --- L'AJOUT CRUCIAL ICI ---
+    await this.supabase.from('activities').insert([{
+      type: 'lead_converted',
+      description: `Affaire convertie : ${lead.title} (${lead.amount} €)`
+    }]);
   }
+  return data;
+}
 
   private async createAutoTask(lead: any) {
     const dueDate = new Date();
@@ -49,6 +59,24 @@ export class LeadsService {
       due_date: dueDate.toISOString(),
       contact_id: lead.contact_id
     }]);
+  }
+
+  // NOUVELLE MÉTHODE : Génération de facture automatique
+  private async createAutoInvoice(lead: any) {
+    const invNumber = `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30); // Échéance à 30 jours
+
+    const { error } = await this.supabase.from('invoices').insert([{
+      lead_id: lead.id,
+      contact_id: lead.contact_id,
+      invoice_number: invNumber,
+      amount: lead.amount,
+      status: 'en attente',
+      due_date: dueDate.toISOString()
+    }]);
+
+    if (error) console.error("Erreur Facture Auto:", error.message);
   }
 
   async remove(id: string) {
