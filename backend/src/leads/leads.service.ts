@@ -52,7 +52,29 @@ export class LeadsService {
       .select();
 
     if (error) throw new InternalServerErrorException(error.message);
+
+    // Automation : déclenchée si le statut passe à 'converti'
+    if (updateLeadDto?.status === 'converti' && data && data.length > 0) {
+      await this.createAutoTask(data[0]);
+    }
+
     return data;
+  }
+
+  private async createAutoTask(lead: any) {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 2);
+
+    const { error } = await this.supabase.from('tasks').insert([{
+      title: `📄 Contrat & Facturation : ${lead.title}`,
+      status: 'à faire',
+      due_date: dueDate.toISOString(),
+      contact_id: lead.contact_id
+    }]);
+
+    if (error) {
+      console.error("Erreur Task Auto:", error.message);
+    }
   }
 
   async remove(id: string) {
@@ -74,7 +96,6 @@ export class LeadsService {
 
     const header = "Opportunité;Montant;Statut;Date;Contact\n";
     
-    // Correction : On caste l.contacts en 'any' ou on accède à l'index [0] pour satisfaire TS
     const rows = (leads || []).map(l => {
       const contact = Array.isArray(l.contacts) ? l.contacts[0] : l.contacts;
       const contactName = contact ? `${contact.first_name} ${contact.last_name}` : "N/A";
