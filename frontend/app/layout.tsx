@@ -12,7 +12,8 @@ import {
   LogOut, 
   Briefcase, 
   CheckSquare, 
-  Settings 
+  Settings,
+  FileText // <-- AJOUTÉ
 } from 'lucide-react';
 import GlobalSearch from "@/components/GlobalSearch"; 
 
@@ -22,21 +23,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
 
-  // Gestion de la session et application du thème
+  // Gestion de la session et du thème
   useEffect(() => {
     const initialize = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
 
-      if (currentSession) {
-        // On récupère la préférence de thème en base de données
+      if (session) {
         const { data } = await supabase
           .from('profiles')
           .select('theme')
-          .eq('id', currentSession.user.id)
+          .eq('id', session.user.id)
           .single();
         
-        // Application stricte de la classe au document pour le Dark Mode
         if (data?.theme === 'dark') {
           document.documentElement.classList.add('dark');
         } else {
@@ -53,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     });
 
     return () => subscription.unsubscribe();
-  }, [pathname]); // Se déclenche à chaque navigation pour vérifier le thème
+  }, [pathname]);
 
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -61,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Entreprises', href: '/companies', icon: Briefcase },
     { name: 'Pipeline', href: '/pipeline', icon: Rocket },
     { name: 'Tâches', href: '/tasks', icon: CheckSquare },
+    { name: 'Factures', href: '/invoices', icon: FileText }, // <-- AJOUTÉ
     { name: 'Paramètres', href: '/settings', icon: Settings },
   ];
 
@@ -85,7 +85,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-300">
         
-        {/* SIDEBAR */}
         <aside className="w-72 bg-slate-950 dark:bg-black text-white flex flex-col border-r border-slate-800 shadow-2xl relative z-50">
           <div className="p-8 pb-4">
             <div className="flex items-center gap-3 text-2xl font-black tracking-tighter italic">
@@ -129,7 +128,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </aside>
 
-        {/* CONTENU PRINCIPAL */}
         <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 relative z-10 transition-colors duration-300">
             <div className="p-8">
               {children}
