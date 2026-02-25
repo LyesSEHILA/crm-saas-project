@@ -106,12 +106,12 @@ export default function ContactsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 font-sans transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 italic uppercase">Contacts</h1>
-            <p className="text-slate-500 font-medium">Gérez votre répertoire client.</p>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white italic uppercase">Contacts</h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">Gérez votre répertoire client.</p>
           </div>
           <button onClick={() => openModal()} className="bg-blue-600 text-white font-black py-4 px-8 rounded-2xl shadow-xl flex items-center gap-2 uppercase text-xs tracking-widest">
             <UserPlus size={18} /> Nouveau Contact
@@ -125,40 +125,40 @@ export default function ContactsPage() {
             placeholder="Rechercher un contact..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border-2 border-transparent rounded-[2rem] py-5 pl-16 pr-6 text-slate-900 font-bold focus:border-blue-500 outline-none shadow-xl shadow-slate-200/50"
+            className="w-full bg-white dark:bg-slate-900 border-2 border-transparent dark:border-slate-800 rounded-[2rem] py-5 pl-16 pr-6 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none shadow-xl shadow-slate-200/50 dark:shadow-none"
           />
         </div>
 
-        <div className="bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100 text-[11px] text-slate-400 uppercase tracking-[0.3em] font-black">
+              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 uppercase tracking-[0.3em] font-black">
                 <th className="p-8">Identité & Entreprise</th>
                 <th className="p-8">Coordonnées</th>
                 <th className="p-8 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
               {filteredContacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-blue-50/30 transition-colors">
+                <tr key={contact.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors">
                   <td className="p-8">
-                    <div className="font-black text-slate-900 text-lg">{contact.first_name} {contact.last_name}</div>
+                    <div className="font-black text-slate-900 dark:text-white text-lg">{contact.first_name} {contact.last_name}</div>
                     {contact.companies?.name ? (
-                      <div className="flex items-center gap-1.5 text-blue-600 text-[10px] font-black uppercase mt-1">
+                      <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase mt-1">
                         <Briefcase size={12} /> {contact.companies.name}
                       </div>
                     ) : (
-                      <div className="text-slate-300 text-[10px] font-bold uppercase mt-1 italic">Indépendant</div>
+                      <div className="text-slate-300 dark:text-slate-500 text-[10px] font-bold uppercase mt-1 italic">Indépendant</div>
                     )}
                   </td>
                   <td className="p-8 space-y-1">
-                    <div className="flex items-center gap-2 text-slate-600 font-medium text-sm"><Mail size={14}/> {contact.email}</div>
-                    {contact.phone && <div className="flex items-center gap-2 text-slate-400 text-xs"><Phone size={14}/> {contact.phone}</div>}
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium text-sm"><Mail size={14}/> {contact.email}</div>
+                    {contact.phone && <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs"><Phone size={14}/> {contact.phone}</div>}
                   </td>
                   <td className="p-8 text-right">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => openModal(contact)} className="p-3 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Edit2 size={18}/></button>
-                      <button onClick={() => handleDelete(contact.id)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18}/></button>
+                      <button onClick={() => openModal(contact)} className="p-3 text-slate-300 dark:text-slate-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"><Edit2 size={18}/></button>
+                      <button onClick={() => handleDelete(contact.id)} className="p-3 text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><Trash2 size={18}/></button>
                     </div>
                   </td>
                 </tr>
@@ -172,32 +172,32 @@ export default function ContactsPage() {
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-white rounded-[3rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10">
-              <div className="p-10 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h2 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">{editingContact ? 'Modifier' : 'Ajouter'} <span className="text-blue-600">Contact</span></h2>
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 border border-transparent dark:border-slate-800">
+              <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic uppercase">{editingContact ? 'Modifier' : 'Ajouter'} <span className="text-blue-600">Contact</span></h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-red-500"><X /></button>
               </div>
               <form onSubmit={handleSubmit} className="p-10 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
-                  <input required placeholder="Prénom" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none" />
-                  <input required placeholder="Nom" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none" />
+                  <input required placeholder="Prénom" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none" />
+                  <input required placeholder="Nom" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none" />
                 </div>
-                <input required type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none" />
-                <input placeholder="Téléphone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none" />
+                <input required type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none" />
+                <input placeholder="Téléphone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none" />
                 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Entreprise</label>
                   <select 
                     value={formData.company_id} 
                     onChange={(e) => setFormData({...formData, company_id: e.target.value})}
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 font-bold focus:border-blue-500 outline-none appearance-none"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white font-bold focus:border-blue-500 outline-none appearance-none"
                   >
                     <option value="">-- Sélectionner une entreprise --</option>
                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
 
-                <button type="submit" className="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs mt-4">
+                <button type="submit" className="w-full bg-slate-900 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs mt-4">
                   {editingContact ? 'Mettre à jour' : 'Enregistrer le contact'}
                 </button>
               </form>

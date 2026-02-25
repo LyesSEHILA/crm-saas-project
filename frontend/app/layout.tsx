@@ -5,7 +5,15 @@ import { supabase } from "@/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import "./globals.css";
-import { Users, LayoutDashboard, Rocket, LogOut, Briefcase, CheckSquare } from 'lucide-react';
+import { 
+  Users, 
+  LayoutDashboard, 
+  Rocket, 
+  LogOut, 
+  Briefcase, 
+  CheckSquare, 
+  Settings 
+} from 'lucide-react';
 import GlobalSearch from "@/components/GlobalSearch"; 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,16 +22,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
 
+  // Gestion de la session et application du thème
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    const initialize = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+
+      if (currentSession) {
+        // On récupère la préférence de thème en base de données
+        const { data } = await supabase
+          .from('profiles')
+          .select('theme')
+          .eq('id', currentSession.user.id)
+          .single();
+        
+        // Application stricte de la classe au document pour le Dark Mode
+        if (data?.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
       setLoading(false);
-    });
+    };
+
+    initialize();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [pathname]); // Se déclenche à chaque navigation pour vérifier le thème
 
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -31,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Entreprises', href: '/companies', icon: Briefcase },
     { name: 'Pipeline', href: '/pipeline', icon: Rocket },
     { name: 'Tâches', href: '/tasks', icon: CheckSquare },
+    { name: 'Paramètres', href: '/settings', icon: Settings },
   ];
 
   if (pathname === '/login') return <html lang="fr"><body>{children}</body></html>;
@@ -38,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   if (loading) {
     return (
       <html lang="fr">
-        <body className="h-screen flex items-center justify-center bg-white">
+        <body className="h-screen flex items-center justify-center bg-white dark:bg-slate-950">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
         </body>
       </html>
@@ -52,12 +83,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="fr">
-      <body className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <body className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-300">
         
-        {/* SIDEBAR : On s'assure qu'elle ne crée pas de voile sur le reste */}
-        <aside className="w-72 bg-slate-950 text-white flex flex-col border-r border-slate-800 shadow-2xl relative z-50">
-          
-          {/* LOGO */}
+        {/* SIDEBAR */}
+        <aside className="w-72 bg-slate-950 dark:bg-black text-white flex flex-col border-r border-slate-800 shadow-2xl relative z-50">
           <div className="p-8 pb-4">
             <div className="flex items-center gap-3 text-2xl font-black tracking-tighter italic">
               <div className="bg-blue-600 p-2 rounded-xl not-italic shadow-lg shadow-blue-500/20">
@@ -67,11 +96,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
 
-          {/* RECHERCHE GLOBALE */}
           <GlobalSearch />
           
-          {/* NAVIGATION */}
-          <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto scrollbar-hide">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -81,7 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 font-bold group ${
                     isActive 
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                    : 'text-slate-400 hover:bg-slate-900 dark:hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   <item.icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
@@ -91,7 +118,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             })}
           </nav>
 
-          {/* DÉCONNEXION */}
           <div className="p-4 border-t border-slate-900">
             <button 
               onClick={() => supabase.auth.signOut()}
@@ -103,13 +129,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </aside>
 
-        {/* CONTENU PRINCIPAL : Fond solide pour éviter l'effet grisé */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 relative z-10">
+        {/* CONTENU PRINCIPAL */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 relative z-10 transition-colors duration-300">
             <div className="p-8">
               {children}
             </div>
         </main>
-
       </body>
     </html>
   );
