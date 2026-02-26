@@ -10,7 +10,7 @@ export default function TasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ title: '', due_date: '', contact_id: '', description: '' });
 
-  const API_URL = 'http://localhost:3000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   useEffect(() => {
     fetchTasks();
