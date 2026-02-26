@@ -17,8 +17,7 @@ export default function CompaniesPage() {
     website: ''
   });
 
-  const API_URL = 'http://localhost:3000/companies';
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/companies` : 'http://localhost:3000/companies';
   useEffect(() => {
     fetchCompanies();
   }, []);
