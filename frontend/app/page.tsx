@@ -20,7 +20,7 @@ export default function ContactsPage() {
     company_id: '' // Champ pour l'entreprise
   });
 
-  const API_URL = 'http://localhost:3000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   useEffect(() => {
     fetchContacts();
