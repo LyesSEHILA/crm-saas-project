@@ -4,44 +4,50 @@
 
 ## 🛠️ Stack Technique
 
-L'application repose sur une architecture découplée (Full-Stack) robuste :
+L'application repose sur une architecture Full-Stack robuste et animée :
 
-* **Frontend :** [Next.js 15+](https://nextjs.org/) (React) avec **Tailwind CSS** pour une interface moderne et responsive.
-* **Backend :** [NestJS](https://nestjs.com/) (Node.js) pour une API REST structurée et scalable.
-* **Base de Données :** [Supabase](https://supabase.com/) (PostgreSQL) pour le stockage des données et l'authentification.
-* **Emailing :** API [Brevo](https://www.brevo.com/) pour l'automatisation marketing.
+* **Frontend :** [Next.js 15+](https://nextjs.org/) (React) avec **Tailwind CSS**.
+* **Animations & UI :** [Framer Motion](https://www.framer.com/motion/) pour les transitions fluides et [Lucide React](https://lucide.dev/) pour l'iconographie.
+* **Charts :** [Recharts](https://recharts.org/) pour la visualisation des données.
+* **Drag & Drop :** [@hello-pangea/dnd](https://github.com/hello-pangea/dnd) pour le pipeline Kanban.
+* **Backend :** [NestJS](https://nestjs.com/) (Node.js) avec architecture modulaire (Leads, Contacts, Companies, Tasks, Stats).
+* **Base de Données :** [Supabase](https://supabase.com/) (PostgreSQL) et authentification.
 * **Déploiement :** **Vercel** (Frontend) et **Render** (Backend).
 
 ---
 
 ## ✨ Fonctionnalités Clés
 
-### 📊 Dashboard Analytique (BI)
+### 📊 Dashboard Analytique & BI
 
-* Suivi en temps réel du **Chiffre d'Affaires** estimé.
-* Calcul automatique du **Taux de Conversion** des leads.
-* Visualisation du funnel de vente par barres de progression.
+* Suivi en temps réel : Chiffre d'Affaires, Taux de Conversion, Contacts et Entreprises.
+* **Visualisation de données :** Graphique de tendance des revenus généré dynamiquement via l'API Stats.
+* **Tâches prioritaires :** Affichage des rappels immédiats directement sur le tableau de bord.
 
 ### 🚀 Pipeline Commercial (Kanban)
 
-* Gestion visuelle des opportunités de vente.
-* Suivi des statuts : *Nouveau, En cours, Converti, Perdu*.
-* Interface intuitive pour déplacer les leads dans le cycle de vente.
+* **Gestion visuelle :** Système de drag-and-drop pour déplacer les opportunités entre les colonnes (*Nouveau, En cours, Converti, Perdu*).
+* **Historique :** Ajout de notes de suivi et commentaires sur chaque affaire.
+* **Exportation :** Fonctionnalité d'exportation des leads au format CSV.
 
-### 👥 Gestion des Contacts & Leads
+### 👥 Répertoire Client complet
 
-* CRUD complet (Création, Lecture, Mise à jour, Suppression) des clients.
-* Association dynamique entre contacts et opportunités commerciales.
+* **Contacts :** Gestion des clients avec association dynamique aux entreprises.
+* **Entreprises Partenaires :** Module dédié pour gérer les organisations, secteurs d'activité et sites web.
+
+### 📋 Rappels & Gestion des Tâches
+
+* Planification de missions liées à des contacts spécifiques.
+* Suivi d'état (À faire / Terminé) avec interface interactive.
+
+### 🔎 Recherche Globale & UX
+
+* **Global Search :** Barre de recherche intelligente accessible partout pour trouver contacts, leads ou entreprises instantanément.
+* **Mode Sombre :** Support complet du thème Dark/Light basé sur les préférences système ou le choix utilisateur.
 
 ### 📧 Marketing Automation
 
-* Envoi automatique d'un **Email de Bienvenue** via l'API Brevo lors de la création d'un nouveau contact.
-* Notifications professionnelles personnalisées.
-
-### 🔐 Sécurité & Authentification
-
-* Accès sécurisé via **Supabase Auth**.
-* Protection des routes et gestion des sessions persistantes.
+* Intégration de l'API **Brevo** pour l'envoi automatique d'emails de bienvenue.
 
 ---
 
@@ -52,36 +58,36 @@ L'application repose sur une architecture découplée (Full-Stack) robuste :
 * Node.js (v18+)
 * Un compte Supabase & Brevo
 
-### Installation
+### Configuration du Backend
 
-1. **Cloner le dépôt :**
-```bash
-git clone https://github.com/LyesSEHILA/crm-saas-project.git
-cd crm-saas-project
-
-```
-
-
-2. **Configurer le Backend :**
-```bash
-cd backend
-npm install
-# Créer un fichier .env avec vos clés (SUPABASE_URL, SUPABASE_KEY, BREVO_API_KEY)
-npm run start:dev
+1. Aller dans le dossier `backend` : `cd backend`
+2. Installer les dépendances : `npm install`
+3. Créer un fichier `.env` :
+```env
+SUPABASE_URL=votre_url
+SUPABASE_KEY=votre_cle_service_role
+BREVO_API_KEY=votre_cle_api
+PORT=3000
 
 ```
 
 
-3. **Configurer le Frontend :**
-```bash
-cd ../frontend
-npm install
-# Créer un fichier .env.local (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
-npm run dev
+4. Lancer le serveur : `npm run start:dev`
+
+### Configuration du Frontend
+
+1. Aller dans le dossier `frontend` : `cd ../frontend`
+2. Installer les dépendances : `npm install`
+3. Créer un fichier `.env.local` :
+```env
+NEXT_PUBLIC_SUPABASE_URL=votre_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=votre_cle_anon
+NEXT_PUBLIC_API_URL=http://localhost:3000
 
 ```
 
 
+4. Lancer l'application : `npm run dev`
 
 ---
 
@@ -94,6 +100,4 @@ npm run dev
 
 ## 👤 Auteur
 
-* **Lyes Sehila** 
-
----
+* **Lyes Sehila**
