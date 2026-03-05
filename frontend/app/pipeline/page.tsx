@@ -8,13 +8,15 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
-const COLUMNS = ['nouveau', 'en cours', 'converti', 'perdu'];
+// --- NOUVELLES COLONNES DU PIPELINE ---
+const COLUMNS = ['prospect', 'qualification', 'proposition', 'négociation', 'gagné', 'perdu'];
 
 export default function PipelinePage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: '', amount: '', status: 'nouveau', contact_id: '' });
+  // Le statut initial devient 'prospect'
+  const [formData, setFormData] = useState({ title: '', amount: '', status: 'prospect', contact_id: '' });
   
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [notes, setNotes] = useState<any[]>([]);
@@ -45,7 +47,6 @@ export default function PipelinePage() {
     setNotes(Array.isArray(data) ? data : []);
   };
 
-  // --- FONCTION D'EXPORTATION CSV ---
   const handleExport = () => {
     window.open(`${API_URL}/leads/export/csv`, '_blank');
   };
@@ -82,7 +83,8 @@ export default function PipelinePage() {
       body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
     });
     setIsModalOpen(false);
-    setFormData({ title: '', amount: '', status: 'nouveau', contact_id: '' });
+    // On réinitialise sur 'prospect'
+    setFormData({ title: '', amount: '', status: 'prospect', contact_id: '' });
     fetchLeads();
   };
 
@@ -113,7 +115,8 @@ export default function PipelinePage() {
   };
 
   const totalPipelineValue = leads.reduce((sum, lead) => sum + (Number(lead.amount) || 0), 0);
-  const wonValue = getColumnTotal('converti');
+  // La valeur gagnée se base maintenant sur 'gagné'
+  const wonValue = getColumnTotal('gagné');
   const progressPercentage = totalPipelineValue > 0 ? (wonValue / totalPipelineValue) * 100 : 0;
 
   return (
@@ -123,7 +126,6 @@ export default function PipelinePage() {
           PIPELINE <span className="text-blue-600">SALES</span>
         </h1>
         
-        {/* BOUTONS D'ACTION */}
         <div className="flex gap-4">
           <button 
             onClick={handleExport}
@@ -141,7 +143,6 @@ export default function PipelinePage() {
         </div>
       </header>
 
-      {/* BARRE DE PROGRESSION GLOBALE */}
       <section className="max-w-7xl mx-auto mb-12 bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
           <div>
@@ -174,12 +175,13 @@ export default function PipelinePage() {
       </section>
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-6 overflow-x-auto pb-10 px-4 min-h-[80vh]">
+        {/* L'overflow-x-auto permet de scroller horizontalement s'il y a beaucoup de colonnes */}
+        <div className="flex gap-6 overflow-x-auto pb-10 px-4 min-h-[80vh] scrollbar-hide">
           {COLUMNS.map((status) => (
             <div key={status} className="w-80 flex-shrink-0 flex flex-col group">
               <div className="flex flex-col mb-4 px-4">
                 <div className="flex justify-between items-center">
-                  <h2 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em]">{status}</h2>
+                  <h2 className="font-black text-slate-400 uppercase text-[10px] tracking-[0.2em] truncate">{status}</h2>
                   <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black px-2.5 py-1 rounded-lg">
                     {leads.filter(l => l.status === status).length}
                   </span>
@@ -218,7 +220,7 @@ export default function PipelinePage() {
                               <div className="flex justify-between items-center pt-4 border-t border-slate-50 dark:border-slate-700/50">
                                 <span className="text-lg font-black text-slate-900 dark:text-white">{lead.amount?.toLocaleString()} €</span>
                                 <div className="h-1.5 w-8 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                    <div className={`h-full bg-blue-500 ${lead.status === 'converti' ? 'w-full bg-emerald-500' : 'w-1/3'}`}></div>
+                                    <div className={`h-full bg-blue-500 ${lead.status === 'gagné' ? 'w-full bg-emerald-500' : lead.status === 'perdu' ? 'w-full bg-red-500' : 'w-1/3'}`}></div>
                                 </div>
                               </div>
                             </div>
@@ -235,7 +237,6 @@ export default function PipelinePage() {
         </div>
       </DragDropContext>
 
-      {/* PANNEAU LATÉRAL (SLIDE-OVER) */}
       <AnimatePresence>
         {selectedLead && (
           <div className="fixed inset-0 z-[60] flex justify-end">
@@ -298,7 +299,6 @@ export default function PipelinePage() {
         )}
       </AnimatePresence>
 
-      {/* MODALE DE CRÉATION */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">

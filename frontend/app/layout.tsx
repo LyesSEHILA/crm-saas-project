@@ -13,20 +13,19 @@ import {
   Briefcase, 
   CheckSquare, 
   Settings,
-  FileText
+  FileText,
+  Mail,
+  PieChart // Import de l'icône pour les Insights
 } from 'lucide-react';
 import GlobalSearch from "@/components/GlobalSearch"; 
-import { Mail } from 'lucide-react'; // N'oublie pas d'importer l'icône !
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
-  // --- CORRECTION : Le rôle n'est jamais vide au démarrage ---
   const [userRole, setUserRole] = useState<string>('utilisateur standard'); 
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Gestion de la session, du thème et du rôle
   useEffect(() => {
     const initialize = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -40,17 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           .single();
         
         if (data) {
-          // Gestion du thème
           if (data.theme === 'dark') {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
           }
-          
-          // --- CORRECTION : Nettoyage du texte (minuscules + sans espaces) ---
           setUserRole(data.role?.trim().toLowerCase() || 'utilisateur standard');
         } else {
-          // --- CORRECTION : Si le profil n'existe pas en base, rôle par défaut ---
           setUserRole('utilisateur standard');
         }
       }
@@ -66,9 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return () => subscription.unsubscribe();
   }, [pathname]);
 
-  // Ajout de allowedRoles pour chaque élément du menu
+  // --- MENU MIS À JOUR AVEC INSIGHTS (Analyses) ---
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
+    { name: 'Analyses', href: '/insights', icon: PieChart, allowedRoles: ['admin', 'commercial'] }, // Nouveauté !
     { name: 'Contacts', href: '/', icon: Users, allowedRoles: ['admin', 'commercial'] },
     { name: 'Entreprises', href: '/companies', icon: Briefcase, allowedRoles: ['admin', 'commercial'] },
     { name: 'Pipeline', href: '/pipeline', icon: Rocket, allowedRoles: ['admin', 'commercial'] },
@@ -78,13 +74,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Paramètres', href: '/settings', icon: Settings, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
   ];
 
-  // Fonction de déconnexion propre
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
-  // Autoriser login ET register sans session
   const publicRoutes = ['/login', '/register'];
   if (publicRoutes.includes(pathname)) {
     return <html lang="fr"><body>{children}</body></html>;
@@ -100,7 +94,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // Redirection si pas de session
   if (!session) {
     if (typeof window !== 'undefined') {
       router.push('/login');
@@ -125,7 +118,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GlobalSearch />
           
           <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto scrollbar-hide">
-            {/* Filtre des items par rapport au userRole */}
             {navItems
               .filter(item => item.allowedRoles.includes(userRole))
               .map((item) => {

@@ -10,4 +10,9 @@ export class StatsController {
   findAll() {
     return this.statsService.getSummary();
   }
+  
+  @Get('insights')
+  async getInsights() {
+  return this.statsService.getClientInsights();
+}
 }
