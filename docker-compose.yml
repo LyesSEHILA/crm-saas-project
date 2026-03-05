@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # --- NOTRE API NESTJS ---
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      # Les variables devront être présentes dans un fichier .env global
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - PORT=3000
+
+  # --- NOTRE INTERFACE NEXT.JS ---
+  frontend:
+    build: ./frontend
+    ports:
+      - "3001:3000" # On map le port 3000 du conteneur sur le port 3001 de ton PC pour éviter les conflits
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      # Le frontend communique avec le backend via le nom du service Docker
+      - NEXT_PUBLIC_API_URL=http://backend:3000
+    depends_on:
+      - backend # On s'assure que l'API démarre en premier

@@ -1,0 +1,42 @@
+name: SoloCRM CI/CD Pipeline
+
+# Quand est-ce que ce script se lance ?
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # Le robot utilise un Linux
+
+    steps:
+    # 1. Le robot télécharge ton code
+    - name: 📥 Récupérer le code
+      uses: actions/checkout@v3
+
+    # 2. Il installe Node.js
+    - name: ⚙️ Configurer Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    # 3. Il teste la compilation du Backend
+    - name: 🛠️ Backend - Installation & Build
+      run: |
+        cd backend
+        npm install
+        npm run build
+
+    # 4. Il teste la compilation du Frontend
+    - name: 💻 Frontend - Installation & Build
+      env:
+        # Variables factices nécessaires pour passer la compilation CI
+        NEXT_PUBLIC_SUPABASE_URL: "https://dummy.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "dummy"
+        NEXT_PUBLIC_API_URL: "http://localhost:3000"
+      run: |
+        cd frontend
+        npm install
+        npm run build
