@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private readonly brevoApiKey = process.env.BREVO_API_KEY;
-  private readonly senderEmail = process.env.BREVO_SENDER_EMAIL;
+  private readonly senderEmail = process.env.BREVO_SENDER_EMAIL || 'contact@solocrm.com';
 
   async sendWelcomeEmail(contactEmail: string, contactName: string) {
     if (!this.brevoApiKey) {
@@ -104,6 +104,45 @@ export class MailService {
       this.logger.log(`Email de conversion envoyé à ${contactEmail}`);
     } catch (error) {
       this.logger.error(`Échec de l'envoi de l'email de conversion`, error);
+    }
+  }
+
+  // --- NOUVELLE MÉTHODE : Envoi d'email personnalisé depuis le Frontend ---
+  async sendCustomEmail(to: string, subject: string, htmlContent: string) {
+    if (!this.brevoApiKey) {
+      this.logger.error("Tentative d'envoi d'email annulée : Clé API Brevo manquante.");
+      throw new InternalServerErrorException("Clé API Brevo manquante");
+    }
+
+    const payload = {
+      sender: { name: "SOLOCRM", email: this.senderEmail },
+      to: [{ email: to }],
+      subject: subject,
+      htmlContent: htmlContent,
+    };
+
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': this.brevoApiKey,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        this.logger.error(`Erreur Brevo lors de l'envoi d'un email personnalisé : ${JSON.stringify(errorData)}`);
+        throw new Error("Échec de l'envoi via Brevo");
+      }
+
+      this.logger.log(`Email personnalisé envoyé avec succès à ${to}`);
+      return { success: true, message: 'Email envoyé avec succès' };
+    } catch (error) {
+      this.logger.error(`Échec de l'envoi de l'email personnalisé à ${to}`, error);
+      throw new InternalServerErrorException("Erreur lors de l'envoi de l'email");
     }
   }
 }

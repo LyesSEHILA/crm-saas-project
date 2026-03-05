@@ -16,6 +16,7 @@ import {
   FileText
 } from 'lucide-react';
 import GlobalSearch from "@/components/GlobalSearch"; 
+import { Mail } from 'lucide-react'; // N'oublie pas d'importer l'icône !
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { name: 'Pipeline', href: '/pipeline', icon: Rocket, allowedRoles: ['admin', 'commercial'] },
     { name: 'Tâches', href: '/tasks', icon: CheckSquare, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
     { name: 'Factures', href: '/invoices', icon: FileText, allowedRoles: ['admin'] },
+    { name: 'Campagnes', href: '/campaigns', icon: Mail, allowedRoles: ['admin', 'commercial'] },
     { name: 'Paramètres', href: '/settings', icon: Settings, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
   ];
 
