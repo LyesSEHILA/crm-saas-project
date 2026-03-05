@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // <-- Ajout de l'import pour le lien
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -80,6 +81,17 @@ export default function LoginPage() {
             {loading ? "Connexion en cours..." : "Se connecter"}
           </button>
         </form>
+
+        {/* <-- Ajout du bloc pour le lien d'inscription ici --> */}
+        <div className="mt-8 text-center">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Pas encore de compte ?{' '}
+            <Link href="/register" className="text-blue-600 hover:underline">
+              S'inscrire
+            </Link>
+          </p>
+        </div>
+        
       </div>
     </div>
   );

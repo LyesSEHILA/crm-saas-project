@@ -13,17 +13,19 @@ import {
   Briefcase, 
   CheckSquare, 
   Settings,
-  FileText // <-- AJOUTÉ
+  FileText
 } from 'lucide-react';
 import GlobalSearch from "@/components/GlobalSearch"; 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
+  // --- CORRECTION : Le rôle n'est jamais vide au démarrage ---
+  const [userRole, setUserRole] = useState<string>('utilisateur standard'); 
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
 
-  // Gestion de la session et du thème
+  // Gestion de la session, du thème et du rôle
   useEffect(() => {
     const initialize = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -32,14 +34,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       if (session) {
         const { data } = await supabase
           .from('profiles')
-          .select('theme')
+          .select('theme, role') 
           .eq('id', session.user.id)
           .single();
         
-        if (data?.theme === 'dark') {
-          document.documentElement.classList.add('dark');
+        if (data) {
+          // Gestion du thème
+          if (data.theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          
+          // --- CORRECTION : Nettoyage du texte (minuscules + sans espaces) ---
+          setUserRole(data.role?.trim().toLowerCase() || 'utilisateur standard');
         } else {
-          document.documentElement.classList.remove('dark');
+          // --- CORRECTION : Si le profil n'existe pas en base, rôle par défaut ---
+          setUserRole('utilisateur standard');
         }
       }
       setLoading(false);
@@ -54,17 +65,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return () => subscription.unsubscribe();
   }, [pathname]);
 
+  // Ajout de allowedRoles pour chaque élément du menu
   const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Contacts', href: '/', icon: Users },
-    { name: 'Entreprises', href: '/companies', icon: Briefcase },
-    { name: 'Pipeline', href: '/pipeline', icon: Rocket },
-    { name: 'Tâches', href: '/tasks', icon: CheckSquare },
-    { name: 'Factures', href: '/invoices', icon: FileText }, // <-- AJOUTÉ
-    { name: 'Paramètres', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
+    { name: 'Contacts', href: '/', icon: Users, allowedRoles: ['admin', 'commercial'] },
+    { name: 'Entreprises', href: '/companies', icon: Briefcase, allowedRoles: ['admin', 'commercial'] },
+    { name: 'Pipeline', href: '/pipeline', icon: Rocket, allowedRoles: ['admin', 'commercial'] },
+    { name: 'Tâches', href: '/tasks', icon: CheckSquare, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
+    { name: 'Factures', href: '/invoices', icon: FileText, allowedRoles: ['admin'] },
+    { name: 'Paramètres', href: '/settings', icon: Settings, allowedRoles: ['admin', 'commercial', 'utilisateur standard'] },
   ];
 
-  if (pathname === '/login') return <html lang="fr"><body>{children}</body></html>;
+  // Fonction de déconnexion propre
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  // Autoriser login ET register sans session
+  const publicRoutes = ['/login', '/register'];
+  if (publicRoutes.includes(pathname)) {
+    return <html lang="fr"><body>{children}</body></html>;
+  }
 
   if (loading) {
     return (
@@ -76,8 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
+  // Redirection si pas de session
   if (!session) {
-    router.push('/login');
+    if (typeof window !== 'undefined') {
+      router.push('/login');
+    }
     return <html lang="fr"><body></body></html>;
   }
 
@@ -98,28 +123,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <GlobalSearch />
           
           <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto scrollbar-hide">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link 
-                  key={item.name} 
-                  href={item.href} 
-                  className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 font-bold group ${
-                    isActive 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
-                    : 'text-slate-400 hover:bg-slate-900 dark:hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <item.icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                  <span className="uppercase text-[11px] tracking-widest">{item.name}</span>
-                </Link>
-              );
+            {/* Filtre des items par rapport au userRole */}
+            {navItems
+              .filter(item => item.allowedRoles.includes(userRole))
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link 
+                    key={item.name} 
+                    href={item.href} 
+                    className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 font-bold group ${
+                      isActive 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
+                      : 'text-slate-400 hover:bg-slate-900 dark:hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <item.icon size={20} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
+                    <span className="uppercase text-[11px] tracking-widest">{item.name}</span>
+                  </Link>
+                );
             })}
           </nav>
 
           <div className="p-4 border-t border-slate-900">
             <button 
-              onClick={() => supabase.auth.signOut()}
+              onClick={handleLogout}
               className="flex items-center gap-3 w-full p-3.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest group"
             >
               <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
