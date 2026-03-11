@@ -145,4 +145,66 @@ export class MailService {
       throw new InternalServerErrorException("Erreur lors de l'envoi de l'email");
     }
   }
+
+  // --- NOUVELLE MÉTHODE : Email de création de compte Utilisateur ---
+  async sendAccountCreationEmail(userEmail: string, firstName: string) {
+    if (!this.brevoApiKey) {
+      this.logger.warn("Clé API Brevo manquante, l'email de confirmation ne sera pas envoyé.");
+      return;
+    }
+
+    const payload = {
+      sender: { name: "L'équipe SoloCRM", email: this.senderEmail },
+      to: [{ email: userEmail, name: firstName }],
+      subject: "Bienvenue sur SoloCRM ! 🎉",
+      htmlContent: `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          
+          <div style="background-color: #0f172a; padding: 40px 20px; text-align: center;">
+            <span style="color: #ffffff; font-size: 28px; font-weight: 900; letter-spacing: -1px;">SOLO<span style="color: #3b82f6;">CRM</span></span>
+            <p style="color: #94a3b8; font-size: 16px; margin-top: 10px;">Votre nouvelle arme de vente secrète.</p>
+          </div>
+
+          <div style="padding: 40px; background-color: #ffffff;">
+            <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin-bottom: 20px;">Bonjour ${firstName},</h1>
+            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Félicitations, votre compte SoloCRM vient d'être créé avec succès ! Nous sommes ravis de vous compter parmi nos utilisateurs.
+            </p>
+            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+              Vous avez désormais accès à tous les outils pour centraliser vos contacts, suivre vos pipelines et automatiser votre facturation. Prêt à faire décoller votre chiffre d'affaires ?
+            </p>
+            
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="https://crm-saas-project.vercel.app/dashboard" style="background-color: #2563eb; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Accéder à mon Dashboard</a>
+            </div>
+
+            <p style="color: #475569; font-size: 15px; line-height: 1.6;">Si vous avez la moindre question, n'hésitez pas à répondre directement à cet e-mail. Nous sommes là pour vous aider.</p>
+            
+            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
+              <p style="color: #0f172a; font-size: 14px; font-weight: 700; margin: 0;">L'équipe Fondatrice</p>
+              <p style="color: #64748b; font-size: 14px; margin: 0;">SOLOCRM - Propulsé par vos succès</p>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': this.brevoApiKey
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error(`Erreur Brevo: ${response.statusText}`);
+      this.logger.log(`Email de création de compte envoyé avec succès à ${userEmail}`);
+    } catch (error) {
+      this.logger.error(`Échec de l'envoi de l'email de bienvenue à ${userEmail}`, error);
+    }
+  }
+
 }

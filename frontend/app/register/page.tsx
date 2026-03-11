@@ -33,7 +33,21 @@ export default function RegisterPage() {
     if (error) {
       alert("Erreur d'inscription : " + error.message);
     } else {
-      alert("Inscription réussie ! Vous pouvez maintenant vous connecter.");
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        await fetch(`${API_URL}/auth/welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: email, 
+            name: firstName 
+          })
+        });
+      } catch (err) {
+        console.error("L'inscription a réussi, mais l'envoi de l'email a échoué", err);
+      }
+
+      alert("Inscription réussie ! Un email de bienvenue vous a été envoyé. Vous pouvez maintenant vous connecter.");
       router.push('/login');
     }
     setLoading(false);
